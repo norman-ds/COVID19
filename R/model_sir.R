@@ -56,6 +56,5 @@ matplot(t, y.mat[,2:4], type = "l", ylab = "N", col=1)
 legend("right", y.names , lty=5:1, col=1, bty="n", title = "population")
 matplot(t, y.mat[,2:4], type = "l", ylab = "N", log = "y", col=1)
 
-##df <- solve_eqns(SIR, y0, t, constants)
 
 

@@ -2,6 +2,10 @@
 
 We know little about the speed at which viruses are prepared in our society. The technology is available, but the implementation leaves large gaps. How many more gaps can we afford ? An overview of the spread of COVID-19 in Switzerland and a possible mutation should indicate the extent.
 
+## Data
+
+[Der Spiegel](https://www.spiegel.de/wissenschaft/medizin/corona-pandemie-was-uns-die-zahl-der-toten-verraet-a-ca5dc909-716c-44ac-806f-530a10916121)
+
 ## Models
 
 [SIR Model](https://www.idmod.org/docs/hiv/model-sir.html#sir-model)
@@ -37,5 +41,13 @@ docker build -f Dockerfile -t puntaminar/covid:0.1.0 -t puntaminar/covid:latest 
 ```yaml
 docker run -d -p 8787:8787 -v $(pwd):/home/rstudio -e PASSWORD=mypwd puntaminar/covid
 docker run -d -p 8787:8787 -v $(pwd):/home/rstudio -e PASSWORD=mypwd rocker/rstudio:3.6.3
+```
+
+After that to find out which packages are loaded use the *sessionInfo()* function.
+
+```{r}
+sessionInfo()
+loadedNamespaces()
+packageVersion('deSolve')
 ```
 
