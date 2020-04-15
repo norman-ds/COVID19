@@ -10,18 +10,20 @@
 
 # initialization 
 t <- seq(0, 180, by=1) # time points
-DoI <- 20 # average duration of infection
+DoI <- 9 # average duration of infection
 N <- 8.57e6 # population Switzerland
 I0 <- 100 # infectious population at time zero
-R0 <- 10 # recoverd population at time zero
+R0 <- 3 # recoverd population at time zero
 S0 <- N-I0-R0 # susceptible population at time zero
 
 y0 <- c(S=S0, I=I0, R=R0)
 y.names <- c("susceptible ", "infectious", "recoverd")
 parms <- c(R0=R0, N=N, DoI=DoI)
-par_names <- c("R0", "Number of individuals", "Average duration of infection")
+par_names <- c("Reproductive number, R0", 
+               "Number of individuals", 
+               "Average duration of infection")
 par_min <- c(1, N/1000, 1)
-par_max <- c(20, N*10, 30)
+par_max <- c(20, N*10, 20)
 
 #' These function returns the delta of the classic [SIR model](https://www.idmod.org/docs/hiv/model-sir.html#sir-model) without births or deaths.
 #' The package deSolve requires t, y, parms a parameter.
@@ -61,7 +63,7 @@ library(shiny)
 
 # User Interface (UI)
 ui <- pageWithSidebar(
-    headerPanel("SIR model"),
+    headerPanel("SIR model", windowTitle = "SIRmodel"),
     sidebarPanel(
         lapply(seq_along(parms),
                function(x) sliderInput(inputId = names(parms)[x], label = par_names[x],
@@ -69,11 +71,17 @@ ui <- pageWithSidebar(
         )
     ),
     mainPanel(
-        plotOutput("plot_model")
-#        ,
-#        br(), br(), br(),
-#        tableOutput("table_rates")
-    )
+        plotOutput("plot_model"),
+        
+        withMathJax(),
+        helpText('\\(\\beta\\) is the transmission rate and 
+                 \\(\\beta SI\\) represents the number of susceptible individuals that become infected per day'),
+        helpText('\\(\\gamma\\)  is the recovery rate and 
+                 \\(\\gamma I\\) represents the number of infected individuals that recover per day'),
+        helpText('\\(\\frac1\\gamma\\) is the infectious period i.e. the average duration of time an individual remains infected.'),
+        
+        tableOutput("table_rates")
+    )    
 )
 
 # Define server logic required to draw a line plot
@@ -89,11 +97,25 @@ server <- function(input, output){
                                 times = t,
                                 func = SIR,
                                 parms = parms_active)
+        y.mat <- y.mat[,2:4]
         
         # draw the line plot
-        matplot(t, y.mat[,2:4], type = "l", ylab = "N", col=1)
+        matplot(t, y.mat, type = "l", xlab = "Time", ylab = par_names[2], col=1)
         legend("right", y.names , lty=5:1, col=1, bty="n", title = "population")
     })
+    
+    output$table_rates <- renderTable({
+        
+        # Get parameters from user input
+        parms_active <- unlist(reactiveValuesToList(input))
+        
+        data.frame(
+            Parameter = c("beta", "gamma"),
+            Value = c(parms_active["R0"] * (1/parms_active["DoI"]) / parms_active["N"],
+                      1/parms_active["DoI"])
+        )
+        
+    }, digits = -1, bordered = TRUE)
     
     
 }

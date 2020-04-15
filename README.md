@@ -9,7 +9,7 @@ We know little about the speed at which viruses are prepared in our society. The
 ## Models
 
 [SIR Model](https://www.idmod.org/docs/hiv/model-sir.html#sir-model)
-A generic epidemiological model that provides a simplified means of describing the transmission of an infectious disease through individuals where those individuals can pass through the following five states: susceptible, infectious, and recovered.
+A generic epidemiological model that provides a simplified means of describing the transmission of an infectious disease through individuals where those individuals can pass through the following three states: susceptible, infectious, and recovered.
 
 ## How to use GitHub as CI/CD
 
