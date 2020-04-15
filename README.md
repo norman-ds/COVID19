@@ -18,7 +18,7 @@ GitHub is the world's leading software development platform with services for CI
 
 ## How to create a reproduceable Shiny-App
 
-Start [RStudio](https://rstudio.com) in a [docker](https://www.docker.com), which always guarantees you the same ecos-system [rocker/rstudio:3.6.3](https://github.com/rocker-org/rocker). Link a local volume (the current working directory, $(pwd)) to the rstudio container. Running the following command will start RStudio in http://localhost:8787.
+Start [RStudio](https://rstudio.com) in a [docker](https://www.docker.com), which always guarantees you the same ecos-system [rocker/rstudio:3.6.3](https://github.com/rocker-org/rocker). Link a local volume (the current working directory, $(pwd)) to the rstudio container. Running the following command will start RStudio in http://localhost:8787. In addition, to speed up loading at startup, we have also added the shiny software to the docker image.
 
 To solve the model we will use a package named *deSolve* for that we are going to build an own image with a `Dockerfile`. 
 
@@ -29,16 +29,20 @@ LABEL maintainer="Norman Bieri <norman.bieri@puntaminar.ch>"
 # Install R packages
 ## deSolve: Solvers for Initial Value Problems of Differential Equations ('ODE', 'DAE', 'DDE')
 RUN R -e "install.packages('deSolve', repos='https://cran.rstudio.com/')"
+
+# Install shiny server
+RUN export ADD=shiny && bash /etc/cont-init.d/add
 ```
 
 To build the docker image run the next command:
 
-```yaml
+```
 docker build -f Dockerfile -t puntaminar/covid:0.1.0 -t puntaminar/covid:latest .
 ```
 
 
-```yaml
+```
+docker run -d -p 3838:3838 -p 8787:8787 -v $(pwd):/home/rstudio -e PASSWORD=mypwd puntaminar/covid
 docker run -d -p 8787:8787 -v $(pwd):/home/rstudio -e PASSWORD=mypwd puntaminar/covid
 docker run -d -p 8787:8787 -v $(pwd):/home/rstudio -e PASSWORD=mypwd rocker/rstudio:3.6.3
 ```

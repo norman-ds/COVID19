@@ -1,7 +1,8 @@
 #' SIR model
 #'
 #' These function returns the delta of the classic [SIR model](https://www.idmod.org/docs/hiv/model-sir.html#sir-model) without births or deaths.
-###' @param t vector of time steps
+#' The package deSolve requires t, y, parms a parameter.
+#' @param t vector of time steps
 #' @param y vector of model variables S,I,R.
 #' @param parms vector of model parameters R0, DoI, N.
 #' @return equation list
