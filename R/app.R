@@ -73,6 +73,8 @@ ui <- pageWithSidebar(
     mainPanel(
         plotOutput("plot_model"),
         
+        DiagrammeR::DiagrammeROutput(outputId = "diagram", width = "500", height = "auto"),
+        
         withMathJax(),
         helpText('\\(\\beta\\) is the transmission rate and 
                  \\(\\beta SI\\) represents the number of susceptible individuals that become infected per day'),
@@ -98,7 +100,7 @@ server <- function(input, output){
                                 func = SIR,
                                 parms = parms_active)
         y.mat <- y.mat[,2:4]
-        
+
         # draw the line plot
         matplot(t, y.mat, type = "l", xlab = "Time", ylab = par_names[2], col=1)
         legend("right", y.names , lty=5:1, col=1, bty="n", title = "population")
@@ -110,13 +112,21 @@ server <- function(input, output){
         parms_active <- unlist(reactiveValuesToList(input))
         
         data.frame(
-            Parameter = c("beta", "gamma"),
+            Rate = c("beta", "gamma"),
             Value = c(parms_active["R0"] * (1/parms_active["DoI"]) / parms_active["N"],
                       1/parms_active["DoI"])
         )
         
     }, digits = -1, bordered = TRUE)
     
+    output$diagram <- 
+        DiagrammeR::renderDiagrammeR({
+            DiagrammeR::mermaid("
+                graph LR
+                A(Susceptible)-->B(Infectious)
+                B-->C(Recovered)
+            ")
+        })
     
 }
 

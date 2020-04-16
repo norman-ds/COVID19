@@ -7,3 +7,7 @@ RUN R -e "install.packages('deSolve', repos='https://cran.rstudio.com/')"
 
 # Install shiny server
 RUN export ADD=shiny && bash /etc/cont-init.d/add
+
+## Build graph/network visualization
+RUN R -e "install.packages('DiagrammeR', repos='https://cran.rstudio.com/')"
+

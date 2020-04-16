@@ -20,7 +20,7 @@ GitHub is the world's leading software development platform with services for CI
 
 Start [RStudio](https://rstudio.com) in a [docker](https://www.docker.com), which always guarantees you the same ecos-system [rocker/rstudio:3.6.3](https://github.com/rocker-org/rocker). Link a local volume (the current working directory, $(pwd)) to the rstudio container. Running the following command will start RStudio in http://localhost:8787. In addition, to speed up loading at startup, we have also added the shiny software to the docker image.
 
-To solve the model we will use a package named *deSolve* for that we are going to build an own image with a `Dockerfile`. 
+To solve the model we will use a package named *deSolve* for that we are going to build an own image with a `Dockerfile`. A nice visualisation of the model with *DiagrammeR* will help.
 
 ```
 FROM rocker/rstudio:3.6.3
@@ -32,19 +32,21 @@ RUN R -e "install.packages('deSolve', repos='https://cran.rstudio.com/')"
 
 # Install shiny server
 RUN export ADD=shiny && bash /etc/cont-init.d/add
+
+## Build graph/network visualization
+RUN R -e "install.packages('DiagrammeR', repos='https://cran.rstudio.com/')"
 ```
 
 To build the docker image run the next command:
 
 ```
-docker build -f Dockerfile -t puntaminar/covid:0.1.0 -t puntaminar/covid:latest .
+docker build -f Dockerfile -t puntaminar/covid:0.3.0 -t puntaminar/covid:latest .
 ```
 
+The next docker command starts in a terminal the latest image as a virtual machine. By running the RStudio in a browser in http://localhost:8787, you will be provided with Shiny, deSolver, DiagrammeR and all the packages they depends on.
 
 ```
-docker run -d -p 3838:3838 -p 8787:8787 -v $(pwd):/home/rstudio -e PASSWORD=mypwd puntaminar/covid
-docker run -d -p 8787:8787 -v $(pwd):/home/rstudio -e PASSWORD=mypwd puntaminar/covid
-docker run -d -p 8787:8787 -v $(pwd):/home/rstudio -e PASSWORD=mypwd rocker/rstudio:3.6.3
+docker run -d -p 8787:8787 -v $(pwd):/home/rstudio -e PASSWORD=pwd puntaminar/covid
 ```
 
 After that to find out which packages are loaded use the *sessionInfo()* function.
