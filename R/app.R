@@ -82,7 +82,9 @@ ui <- pageWithSidebar(
                  \\(\\gamma I\\) represents the number of infected individuals that recover per day'),
         helpText('\\(\\frac1\\gamma\\) is the infectious period i.e. the average duration of time an individual remains infected.'),
         
-        tableOutput("table_rates")
+        tableOutput("table_rates"),
+        
+        helpText('Contact information: norman.bieri@puntaminar.ch')
     )    
 )
 
