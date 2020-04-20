@@ -17,18 +17,64 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r results='asis'}
 # create a dataframe with column year and images as file list
-dat <- data.frame(
+pics <- data.frame(
   images = list.files('../images', recursive = F, full.names = T, pattern="*.png")
 )
-dat$year <- gsub("gd-e-14.03.04","_2020_", dat$images)
-dat$year <- gsub("(^.*)([0-9]{4})(.*)","\\2", dat$year)
-dat$images <- sprintf('![](%s)', dat$images)
+pics$year <- gsub("gd-e-14.03.04","_2020_", pics$images)
+pics$year <- gsub("(^.*)([0-9]{4})(.*)","\\2", pics$year)
+pics$images <- sprintf('![](%s)', pics$images)
 
 # reorganize the figures in a 3x3 table
-plots <- dat$images[order(dat$year, decreasing = T)][1:9]
+plots <- pics$images[order(pics$year, decreasing = T)][1:9]
 plots <- as.data.frame(matrix(unlist(plots), ncol = 3, byrow = TRUE), stringsAsFactors = F)
 
 library(knitr)
-kable(plots, col.names = NULL)
+kable(plots, col.names = NULL, caption = "Publicly published figures by FSO")
 ```
 
+# What about time series
+
+
+```{r results='asis',warning=F}
+
+library(dplyr)
+dat19 <-read.csv2('../Data/ts-d-14.03.04.03-wr_ZR.csv', stringsAsFactors=F) %>%
+  filter(grepl("^20[1-2][0-9]$", KJ))
+dat20 <-read.csv2('../Data/ts-d-14.03.04.03-wr.csv', stringsAsFactors=F)
+
+library(knitr)
+kable(count(dat19,KJ))
+kable(head(dat19))
+
+kable(head(dat20))
+
+dat <- mutate(KJ="2020", dat20) %>%
+  select(KJ, KW="Woche", Age="Alter", Expect="Erwartung") %>%
+  bind_rows(
+    select(dat19,KJ,KW=Kalenderwoche, Age=Alter, Expect=Erwartung)
+  )
+
+#kable(filter(dat, Expect==max(Expect)))
+
+curvetxt <- sprintf('Expected mortality %s \nfor people over 65 years \nin weeks 6 and 7 in 2020', max(dat20$Erwartung))
+library(ggplot2)
+filter(dat, Age=='65+') %>%
+  mutate(highlight=KJ!='2020') %>%
+  ggplot(aes(x=KW, y=Expect, group=KJ, color=highlight, size=highlight)) +
+  geom_line() +
+  scale_color_manual(values = c("#69b3a3", "lightgrey")) +
+  scale_size_manual(values=c(1.5,0.2)) +
+  theme(legend.position="none") +
+  ggtitle("Yearly expected mortalities 2010-2020 (Age 65+)") +
+  ylab(NULL) +
+  xlab('week number') +
+  scale_x_continuous(limits = c(1, 52)) +
+  geom_label( x=15, y=1200, label=curvetxt, size=4, color="#69b3a3") +
+  geom_label( x=40, y=950, label='Expected mortality\nincreases annually', 
+              size=4, color="lightgrey") +
+    theme(
+      legend.position="none",
+      plot.title = element_text(size=14)
+    )
+
+```
