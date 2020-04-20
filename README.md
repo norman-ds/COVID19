@@ -57,3 +57,6 @@ loadedNamespaces()
 packageVersion('deSolve')
 ```
 
+## A public Shiny-App
+
+[shinyapps.io](https://normantest.shinyapps.io/SIRmodel/)

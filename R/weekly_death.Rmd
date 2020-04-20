@@ -1,0 +1,34 @@
+---
+title: "Weekly death"
+author: "Norman Bieri"
+date: "2020/04/20"
+output: html_document
+---
+
+### Continuous registration of deaths
+
+The Health Services Section of the Swiss Federal Statistical Office [publishes](https://www.bfs.admin.ch/bfs/en/home/statistics/health/state-health/mortality-causes-death.html) the deaths of Swiss nationals resident in Switzerland on a weekly basis.
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r results='asis'}
+# create a dataframe with column year and images as file list
+dat <- data.frame(
+  images = list.files('../images', recursive = F, full.names = T, pattern="*.png")
+)
+dat$year <- gsub("gd-e-14.03.04","_2020_", dat$images)
+dat$year <- gsub("(^.*)([0-9]{4})(.*)","\\2", dat$year)
+dat$images <- sprintf('![](%s)', dat$images)
+
+# reorganize the figures in a 3x3 table
+plots <- dat$images[order(dat$year, decreasing = T)][1:9]
+plots <- as.data.frame(matrix(unlist(plots), ncol = 3, byrow = TRUE), stringsAsFactors = F)
+
+library(knitr)
+kable(plots, col.names = NULL)
+```
+
