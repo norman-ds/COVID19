@@ -15,7 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-```{r results='asis'}
+```{r, results='asis'}
 # create a dataframe with column year and images as file list
 pics <- data.frame(
   images = list.files('../images', recursive = F, full.names = T, pattern="*.png")
@@ -34,37 +34,41 @@ kable(plots, col.names = NULL, caption = "Publicly published figures by FSO")
 
 # What about time series
 
-
-```{r results='asis',warning=F}
+```{r results='asis', warning=F}
 
 library(dplyr)
 dat19 <-read.csv2('../Data/ts-d-14.03.04.03-wr_ZR.csv', stringsAsFactors=F) %>%
-  filter(grepl("^20[1-2][0-9]$", KJ))
-dat20 <-read.csv2('../Data/ts-d-14.03.04.03-wr.csv', stringsAsFactors=F)
+  filter(grepl("^20[1-2][0-9]$", KJ)) %>%
+  filter(Alter=='65+') %>%
+  select(KJ,KW=Kalenderwoche, Expect=Erwartung, N=Anzahl_Todesfalle) %>%
+  mutate_at(c('Expect', 'N'), as.integer)
+dat20 <-read.csv2('../Data/ts-d-14.03.04.03-wr.csv', stringsAsFactors=F) %>%
+  filter(Alter=='65+') %>%
+  mutate(KJ='2020') %>%
+  select(KJ,KW=Woche, Expect=Erwartung, N=hochrechnung) %>%
+  mutate_at(c('Expect', 'N'), as.integer)
+
+dat <- bind_rows(dat20,dat19)
 
 library(knitr)
-kable(count(dat19,KJ))
-kable(head(dat19))
+kable(head(dat))
+```
 
-kable(head(dat20))
 
-dat <- mutate(KJ="2020", dat20) %>%
-  select(KJ, KW="Woche", Age="Alter", Expect="Erwartung") %>%
-  bind_rows(
-    select(dat19,KJ,KW=Kalenderwoche, Age=Alter, Expect=Erwartung)
-  )
+```{r results='asis',warning=F}
 
-#kable(filter(dat, Expect==max(Expect)))
+library(ggplot2)
+library(dplyr)
 
 curvetxt <- sprintf('Expected mortality %s \nfor people over 65 years \nin weeks 6 and 7 in 2020', max(dat20$Erwartung))
-library(ggplot2)
-filter(dat, Age=='65+') %>%
+
+dat %>%
   mutate(highlight=KJ!='2020') %>%
   ggplot(aes(x=KW, y=Expect, group=KJ, color=highlight, size=highlight)) +
   geom_line() +
   scale_color_manual(values = c("#69b3a3", "lightgrey")) +
   scale_size_manual(values=c(1.5,0.2)) +
-  theme(legend.position="none") +
+  theme_minimal() +
   ggtitle("Yearly expected mortalities 2010-2020 (Age 65+)") +
   ylab(NULL) +
   xlab('week number') +
@@ -72,9 +76,54 @@ filter(dat, Age=='65+') %>%
   geom_label( x=15, y=1200, label=curvetxt, size=4, color="#69b3a3") +
   geom_label( x=40, y=950, label='Expected mortality\nincreases annually', 
               size=4, color="lightgrey") +
-    theme(
-      legend.position="none",
-      plot.title = element_text(size=14)
-    )
+  theme(
+    legend.position="none",
+    plot.title = element_text(size=14)
+  ) 
+```
+
+
+```{r results='asis',warning=F}
+
+library(ggplot2)
+library(dplyr)
+
+curvetxt <- sprintf('Expected mortality %s \nfor people over 65 years \nin weeks 6 and 7 in 2020', max(dat20$Erwartung))
+
+dat %>%
+  mutate(highlight=KJ!='2020') %>%
+  ggplot(aes(x=KW, y=N, group=KJ, color=highlight, size=highlight)) +
+  geom_line() +
+  scale_color_manual(values = c("#69b3a3", "lightgrey")) +
+  scale_size_manual(values=c(1.5,0.2)) +
+  theme_minimal() +
+  ggtitle("Yearly counted mortalities 2010-2020 (Age 65+)") +
+  ylab(NULL) +
+  xlab('week number') +
+  scale_x_continuous(limits = c(1, 52))  +
+  theme(
+    legend.position="none",
+    plot.title = element_text(size=14)
+  )
+
+    
+dat %>%
+  group_by(KJ) %>%
+  mutate(N_cum = cumsum(N)) %>%
+  mutate(highlight=KJ!='2020') %>%
+  ungroup() %>%
+  ggplot(aes(x=KW, y=N_cum, group=KJ, color=highlight, size=highlight)) +
+  geom_line() +
+  scale_color_manual(values = c("#69b3a3", "lightgrey")) +
+  scale_size_manual(values=c(1.5,0.2)) +
+  theme_minimal() +
+  ggtitle("Yearly summarized mortalities 2010-2020 (Age 65+)") +
+  ylab(NULL) +
+  xlab('week number') +
+  scale_x_continuous(limits = c(1, 52))  +
+  theme(
+    legend.position="none",
+    plot.title = element_text(size=14)
+  )
 
 ```

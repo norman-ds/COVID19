@@ -4,6 +4,7 @@ We know little about the speed at which viruses are prepared in our society. The
 
 ## Data
 
+Continuous registration of deaths [Federal Statistical Office](https://www.bfs.admin.ch/bfs/en/home/statistics/health/state-health/mortality-causes-death.html)
 [Der Spiegel](https://www.spiegel.de/wissenschaft/medizin/corona-pandemie-was-uns-die-zahl-der-toten-verraet-a-ca5dc909-716c-44ac-806f-530a10916121)
 
 ## Models
