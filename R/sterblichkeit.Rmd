@@ -1,0 +1,207 @@
+---
+title: "Die Zahl der Toten"
+author: "Norman Bieri, https://puntaminar.ch"
+date: "22. Februar 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Zur aktuellen COVID-19 Pandemie sind viele Methoden und Daten verfügbar, wenn auch mit einigen Unsicherheiten, sind dennoch Resultate berechenbar. Bevor eine Methode bestimmt wird ist der Prozess, wie neue Daten entstehen, und die Relationen zu bestehenden Datenbeständen zu hinterfragen. Eine releativ verlässliche Zahl ist die [laufende Erfassung der Todesfälle](https://www.bfs.admin.ch/bfs/de/home/statistiken/gesundheit/gesundheitszustand/sterblichkeit-todesursachen.html) in der Schweiz.
+
+
+# Modell
+
+Viele berichteten im März und April 2020 über Methoden, die helfen eine Pandemie und die Wirkung der angeordneten Massnahmen zu verstehen. Ich möchte nur einige auserwählte Arbeiten hier festhalten - sicher gibt es noch viele weitere.
+
+* Tim Churches, Health Data Science Blog, 17.Februar 2020, Analysing COVID-19 (2019-nCoV) outbreak data with R - part 1, Verfügbar unter: https://timchurches.github.io/blog/posts/2020-02-18-analysing-covid-19-2019-ncov-outbreak-data-with-r-part-1/
+* Harry Stevens, The Washingtonpost, 14.März 2020, Why outbreaks like coronavirus spread exponentially, and how to *flatten the curve*, Verfügbar unter: https://www.washingtonpost.com/graphics/2020/world/corona-simulator/
+* Trung Nguyen, Medium, 30.März 2020, Germany COVID-19 social distancing simulation, Verfügbar unter: https://towardsdatascience.com/covid-19-social-distancing-simulation-f091a58732f9
+* Holger Dambeck, Spiegel, 2.April 2020, Was uns die Zahl der Toten verrät, Verfügbar unter: https://www.spiegel.de/wissenschaft/medizin/corona-pandemie-was-uns-die-zahl-der-toten-verraet-a-ca5dc909-716c-44ac-806f-530a10916121
+* Prof.Dr.med.Pietro Vernazza, Kantonsspital St.Gallen, 19.April 2020, Sind wir tatsächlich im Blindflug?, Verfügbar unter: https://infekt.ch/2020/04/sind-wir-tatsaechlich-im-blindflug/
+* an der Heiden M, Hamouda O: Robert Koch Institut, 24.April 2020, Schätzung der aktuel- len Entwicklung der SARS-CoV-2-Epidemie in Deutsch- land – Nowcasting, Verfügbar unter: https://www.rki.de/DE/Content/Infekt/EpidBull/Archiv/2020/Ausgaben/17_20_SARS-CoV2_vorab.pdf?__blob=publicationFile
+* Prof.Dr.Tanja Stadler, ETH Zürich, Department of Biosystems Science and Engineering, last update 21.April 2020, COVID-19 Pandemic and Monitoring spread in Switzerland, Verfügbar unter: https://bsse.ethz.ch/cevo/research/sars-cov-2.html
+
+
+In einem **SEIR**-Modell müssen einige Daten zur Validierung vorhanden sein, beispielsweise zum Zustand *Exposed*, was Viruskontaktohne Symptome bedeutet. Gerade dieser Zustand zeigt, wie schwierig es ist an solche Daten zu kommen. Da dürfte ein gutes Design für Stichproben weiter helfen.
+
+```{r echo=FALSE}
+
+DiagrammeR::grViz("digraph {
+  graph [layout = dot, rankdir = LR]
+  
+  node [shape = oval]        
+  rec1 [label = 'Susceptible']
+  rec2 [label = 'Exposed']
+  rec3 [label = 'Infectious']
+  rec4 [label =  'Recovered']
+
+  # edge definitions with the node IDs
+  rec1 -> rec2 -> rec3 -> rec4
+  }", 
+  height = 100)
+
+```
+*Source: https://www.idmod.org/docs/hiv/model-sir.html*
+
+Das SEIR-Modell alleine genügt noch nicht, denn nicht alle erholen sich von selbst. Viele Erkrankte müssen hospitalisiert werden und einige sterben dennoch.
+
+```{r echo=FALSE}
+
+DiagrammeR::grViz("digraph {
+  graph [layout = dot, rankdir = LR]
+  
+  node [shape = oval]        
+  rec1 [label = 'Infectious']
+  rec2 [label = 'Hospitalized']
+  rec3 [label = 'Dead']
+  rec4 [label =  'Recovered']
+
+  # edge definitions with the node IDs
+  rec1 -> rec2 -> rec3
+  rec2 -> rec4
+  }", 
+  height = 100)
+
+```
+
+In zwischen wissen wir, dass hauptsächlich ältere Menschen mit einem COVID-19 Infekt sterben können. Aber gerade im zunehmenden Alter können Mehrfacherkrankungen auftreten. Da die Zahl der Toten eine relativ zuverlässige Datenquelle darstellt, stellt sich die Frage, ob eine grundsätzliche Zunahme in der Todesfallstatistik erkennbar ist?
+
+# Daten
+
+Viele Datenquellen wurden in den letzten Wochen immer wieder in den Medien erwähnt. Ich möchte nur einige auserwählte öffentliche Datenquellen hier festhalten - sicher gibt es noch viele weitere.
+
+* [Johns Hopkins University](https://coronavirus.jhu.edu)
+* [Statistisches Amt Kanton Zürich](https://www.web.statistik.zh.ch/covid19_dashboard)
+* [Bundesamt für Statistik](https://www.bfs.admin.ch/bfs/de/home/aktuell/covid-19.html)
+* [Bundesamt für Gesundheit](https://www.bag.admin.ch/bag/de/home/krankheiten/ausbrueche-epidemien-pandemien/aktuelle-ausbrueche-epidemien/novel-cov.html)
+* [OBSAN](https://www.obsan.admin.ch/de/indikatoren/corona-risiko-vorerkrankungen-und-risikogruppe-alter-15)
+
+Um die Zahl der Toten einordnen zu können, benötigen wir eine Statistik, die auch in den vergangenen Jahren erhoben wurde. Ein saisonaler Vergleich mit vergangenen Jahren ist hilfreich. Das Bundesamt für Statistik führt eine [laufende Erfassung der Todesfälle](https://www.bfs.admin.ch/bfs/de/home/statistiken/gesundheit/gesundheitszustand/sterblichkeit-todesursachen.html) in der Schweiz durch. 
+
+![](../images/gd-e-14.03.04.03-wr-computed_thumbnail.png)
+
+Erfasst werden alle Todesfälle beim zuständigen Zivilstandsamt von Schweizern mit Wohnsitz in der Schweiz. Neben dem Peak im April ist auch der Verlauf im Januar und Februar auffällig. Anfangs Jahr werden weniger Todesfälle als erwartet an das BFS gemeldet.
+
+
+# Die Zahl der Toten streut wie die Jahre zuvor
+
+Die gemeldeten Todesfälle im März und April 2020 liegen zwar weit über dem 95%-Konfidenzinterval, aber die Grippewelle hat auch in den vergangenen Jahren zu grossen Zahlen geführt. Vor vier Jahren, im Jahr 2016, wurde das letzte mal in den Monaten Januar und Februar so wenige Todesfälle wie im 2020 gemeldet. In den Jahren 2017 bis 2019 waren die gemeldeten Todesfälle im Winter höher als 2020.
+
+
+```{r, results='asis', echo=F}
+# create a dataframe with column year and images as file list
+pics <- data.frame(
+  images = list.files('../images', recursive = F, full.names = T, pattern="*.png")
+)
+pics$year <- gsub("gd-e-14.03.04","_2020_", pics$images)
+pics$year <- gsub("(^.*)([0-9]{4})(.*)","\\2", pics$year)
+pics$images <- sprintf('![](%s)', pics$images)
+
+# reorganize the figures in a 3x3 table
+plots <- pics$images[order(pics$year, decreasing = T)][1:9]
+plots <- as.data.frame(matrix(unlist(plots), ncol = 3, byrow = TRUE), stringsAsFactors = F)
+
+library(knitr)
+kable(plots, col.names = NULL, caption = "Ein Vergleich der publizierten Grafiken vom BFS")
+```
+
+
+Aufgrund des Bevölkerungswachstums in der Schweiz, sterben jedes Jahr mehr Menschen. Dies wiederspegelt sich im jährlichen Erwartungswert vom Bundesamt für Statistik (Mitte des grünen Bandes). 
+
+```{r results='asis', warning=F, echo=F, message=F}
+
+library(dplyr)
+dat19 <-read.csv2('../Data/ts-d-14.03.04.03-wr_ZR.csv', stringsAsFactors=F) %>%
+  filter(grepl("^20[1-2][0-9]$", KJ)) %>%
+  filter(Alter=='65+') %>%
+  select(KJ,KW=Kalenderwoche, Expect=Erwartung, N=Anzahl_Todesfalle) %>%
+  mutate_at(c('Expect', 'N'), as.integer)
+dat20 <-read.csv2('../Data/ts-d-14.03.04.03-wr.csv', stringsAsFactors=F) %>%
+  filter(Alter=='65+') %>%
+  mutate(KJ='2020') %>%
+  select(KJ,KW=Woche, Expect=Erwartung, N=hochrechnung) %>%
+  mutate_at(c('Expect', 'N'), as.integer)
+
+# build a dataframe
+dat <- bind_rows(dat20,dat19) %>%
+  #mutate_at(c('KJ','KW'), as.character) %>%
+  group_by(KJ) %>%
+  mutate(N_cum = cumsum(N), Expect_cum = cumsum(Expect)) %>%
+  ungroup() %>%
+  mutate(highlight=KJ!='2020')
+
+rm(dat19, dat20)
+```
+
+
+```{r results='asis',warning=F, echo=F}
+
+library(ggplot2)
+library(dplyr)
+
+#  Mittlere Erwartungswerte der Toten der Jahre 2010-2020 (Age 65+)
+
+curvetxt <- sprintf('Mittlerer Erwartungswert %s \nfür Schweizer über 65 Jahre \nin der Woche 6 and 7 im 2020.', max(dat$Expect))
+
+dat %>%
+  ggplot(aes(x=KW, y=Expect, group=KJ, color=highlight, size=highlight)) +
+  geom_line() +
+  scale_color_manual(values = c("#69b3a3", "lightgrey")) +
+  scale_size_manual(values=c(1.5,0.2)) +
+  theme_minimal() +
+  ggtitle("Mittlere Erwartungswerte der Toten der Jahre 2010-2020 (Age 65+)") +
+  ylab(NULL) +
+  xlab('Kalenderwoche') +
+  scale_x_continuous(limits = c(1, 52)) +
+  geom_label( x=15, y=1200, label=curvetxt, size=4, color="#69b3a3") +
+  geom_label( x=40, y=950, label='Mittlerer Erwartungswert der Toten\nsteigt jährlich.', 
+              size=4, color="lightgrey") +
+  theme(
+    legend.position="none",
+    plot.title = element_text(size=14)
+  ) 
+
+```
+
+
+Die Summe der erfassten Todesfälle im Jahr 2020 hat noch nicht den Mittleren Erwartungswert erreicht. Das Bundesamt für Statistik hat zwischen dem 1.Januar und dem 21.April 2020 mit mehr Todesfällen gerechnet.
+
+```{r results='asis',warning=F, echo=F}
+#  Mittlere Erwartungswerte und gemeldete Totesfälle der Jahre 2010-2020 (Age 65+)
+# pro Kalenderwoche und kumuliert
+
+facet1lab <- c("erwartet", "gemeldet")
+facet2lab <- c("pro KW", "kumuliert")
+names(facet1lab) <- c("erwartet", "gemeldet")
+names(facet2lab) <- c("pro KW", "kumuliert")
+
+dat %>%
+  tidyr::pivot_longer(cols = starts_with(c('N','E')), names_to = 'key', values_to = 'value') %>%
+  mutate(key1 = if_else(grepl('^N',key), 'gemeldet', 'erwartet'),
+         key2 = if_else(grepl('cum$',key), 'kumuliert', 'pro KW')) %>%
+  #filter(grepl('Expect',key) | KW<21) %>%
+  ggplot(aes(x=KW, y=value, group=KJ, color=highlight, size=highlight)) +
+  geom_line() +
+  scale_color_manual(values = c("#69b3a3", "lightgrey")) +
+  scale_size_manual(values=c(1.5,0.2)) +
+  theme_minimal() +
+  ggtitle("Todesfälle der Jahre 2010 - 2020 (Alter 65+)",
+          "Mittlere Erwartungswerte und laufend erfasste Todesfälle") +
+  ylab(NULL) +
+  xlab('Kalenderwoche') +
+  scale_x_continuous(limits = c(1, 52)) +
+ # facet_wrap(key2 ~ key1, scales = 'free') +
+  facet_grid(vars(key2), vars(key1), scales = 'free', 
+             labeller = labeller(key1=facet1lab, key2=facet2lab)) +
+  theme(
+    legend.position="none",
+    plot.title = element_text(size=14)
+  )
+
+```
+
+
+<p>Copyright &copy; 2020 [puntaminar gmbh](https://puntaminar.ch)</p>
