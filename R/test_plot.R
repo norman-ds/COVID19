@@ -17,12 +17,16 @@ dat20 <-read.csv2('../Data/ts-d-14.03.04.03-wr.csv', stringsAsFactors=F) %>%
 
 # build a dataframe
 dat <- bind_rows(dat20,dat19) %>%
-  #mutate_at(c('KJ','KW'), as.character) %>%
   group_by(KJ) %>%
   mutate(N_cum = cumsum(N), Expect_cum = cumsum(Expect)) %>%
   ungroup() %>%
   mutate(highlight=KJ!='2020')
 
+# latest record
+datlatest <-dat20 %>% 
+  filter(!is.na(N)) %>%
+  filter(KW==max(KW))
+  
 rm(dat19, dat20)
 
 # use ggplot for all plots
@@ -134,4 +138,34 @@ dat %>%
     plot.title = element_text(size=14)
   )
 
-ggsave('dc2020.png', width = 8, height = 6)
+# ggsave('dc2020.png', width = 8, height = 6)
+
+# latest data
+
+bardat <- dat %>% 
+  filter(KW <= datlatest$KW) %>%
+  group_by(KJ) %>%
+  summarise(N=sum(N), Expect=sum(Expect), highlight=any(highlight)) %>%
+  ungroup() %>%
+  mutate(diff = N-Expect)
+
+bartxt <- sprintf('Im Jahr 2020 erfasste Todesfälle %s\n sind leicht über Mittlerem Erwartungswert %s', 
+                  format(last(bardat$N),big.mark = "'"), format(last(bardat$Expect),big.mark = "'"))
+
+bardat %>%
+  ggplot(aes(x=KJ, y=N, fill=highlight)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c("#69b3a3", "lightgrey")) +
+  geom_point(aes(x=KJ, y=Expect)) +
+  theme_minimal() +
+  ggtitle("Todesfälle bis Kalenderwoche 15 (Age 65+)",
+          "Mittlere Erwartungswerte und laufend erfasste Todesfälle") +
+  ylab(NULL) +
+  xlab('Kalenderwoche') +
+  geom_label(x='2017', y=12000, label=bartxt, size=4, color="#69b3a3", fill='white') +
+  theme(
+    legend.position="none",
+    plot.title = element_text(size=14)
+  )
+
+# ggsave('dc2020.png', width = 8, height = 6)
