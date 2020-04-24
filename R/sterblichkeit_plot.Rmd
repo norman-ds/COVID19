@@ -1,0 +1,16 @@
+---
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r image_grobs, fig.show = "hold", out.width = "50%", fig.align = "default", echo=FALSE}
+
+knitr::include_graphics("../images/gd-d-14.03.04.03-wr-computed_thumbnail.png")
+
+knitr::include_graphics("dc2020.png")
+
+```
