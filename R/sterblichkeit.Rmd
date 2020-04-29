@@ -1,7 +1,7 @@
 ---
 title: "Die Zahl der Toten"
 author: "Norman Bieri, https://puntaminar.ch"
-date: "22. Februar 2020"
+date: "29. Februar 2020"
 output: html_document
 ---
 
@@ -230,7 +230,7 @@ bardat %>%
   ggtitle("Todesfälle bis Kalenderwoche 15 (Age 65+)",
           "Mittlere Erwartungswerte und laufend erfasste Todesfälle") +
   ylab(NULL) +
-  xlab('Kalenderwoche') +
+  xlab('Jahr') +
   geom_label(x='2017', y=12000, label=bartxt, size=4, color="#69b3a3", fill='white') +
   theme(
     legend.position="none",
