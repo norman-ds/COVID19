@@ -3,7 +3,8 @@ setwd('R')
 # read downloaded data 
 # download : https://www.bfs.admin.ch/bfs/de/home/statistiken/gesundheit/gesundheitszustand/sterblichkeit-todesursachen.html
 # So können im Mortalitätsmonitoring die «beobachteten» Zahlen mit den «erwarteten» Zahlen verglichen werden. Das BFS publiziert diese Zahlen seit dem 11. Mai 2015 wöchentlich. Das Monitoring umfasst alle Personen mit Wohnsitz in der Schweiz, die in der Schweiz verstorben sind.
-fn0 <- 'ts-d-14.03.04.03-wr.csv' # (<10KB) wöchentlich erfasste Todesfälle 2020
+fn0 <- 'ts-d-14.03.04.03-wr.csv' # (<10KB) Wöchentlich erfasste Todesfälle 2020
+fn0n <- 'ts-d-14.03.04.05-wr.csv' # (<20KB) Wöchentliche Todesfälle nach Grossregion, 65-Jährige und ältere, 2020
 # download : https://www.bfs.admin.ch/bfs/de/home/statistiken/bevoelkerung/geburten-todesfaelle/todesfaelle.html
 fn1 <- 'cc-d-01.04.02.01.03.xlsx' # (<100KB) provisorisch Todesfällenach 2020 nach Monate, Kanton/Städte, Gender, Nation, Alter
 fn2 <- 'cc-d-01.04.02.01.32.xlsx' # (300KB) ständige Wohnbevölkerung Schweiz, Todesfälle 2015-20, nach Woche, Alter
@@ -15,7 +16,7 @@ library(dplyr)
 
 ###############################################
 # N=5411 Schweizer mit Wohnsitz Schweiz
-read.csv2(file.path(datapath,fn0), stringsAsFactors=F) %>%
+read.csv2(file.path(datapath,fn0n), stringsAsFactors=F) %>%
   filter(Woche<5) %>%
   add_tally(as.double(hochrechnung))
 

@@ -4,6 +4,7 @@ setwd('R')
 ## download : https://www.bfs.admin.ch/bfs/de/home/statistiken/gesundheit/gesundheitszustand/sterblichkeit-todesursachen.html
 ## So können im Mortalitätsmonitoring die «beobachteten» Zahlen mit den «erwarteten» Zahlen verglichen werden. Das BFS publiziert diese Zahlen seit dem 11. Mai 2015 wöchentlich. Das Monitoring umfasst alle Personen mit Wohnsitz in der Schweiz, die in der Schweiz verstorben sind.
 #fn0 <- 'ts-d-14.03.04.03-wr.csv' # (<10KB) wöchentlich erfasste Todesfälle 2020
+#fn0n <- 'ts-d-14.03.04.05-wr.csv' # (<20KB) Wöchentliche Todesfälle nach Grossregion, 65-Jährige und ältere, 2020
 ## download : https://www.bfs.admin.ch/bfs/de/home/statistiken/bevoelkerung/geburten-todesfaelle/todesfaelle.html
 #fn1 <- 'cc-d-01.04.02.01.03.xlsx' # (<100KB) provisorisch Todesfällenach 2020 nach Monate, Kanton/Städte, Gender, Nation, Alter
 #fn2 <- 'cc-d-01.04.02.01.32.xlsx' # (300KB) ständige Wohnbevölkerung Schweiz, Todesfälle 2015-20, nach Woche, Alter
@@ -19,7 +20,8 @@ dfdeath <- read.csv2(file.path(datapath,fn4), stringsAsFactors=F) %>%
   mutate(cw = as.integer(cw)) %>%
   mutate(AC0=gsub('(.+[ET])([0-9]?)([049])$','\\2\\3',AGE)) %>%
   mutate(AC1=as.integer(AC0)) %>%
-  mutate(age=if_else(AC1<=64,'0-64','65+')) %>%
+  #mutate(age=if_else(AC1<=64,'0-64','65+')) %>%
+  mutate(age=as.character(cut(AC1, breaks = c(0,64,80,100)))) %>%
   group_by(geo=GEO, year, cw, age) %>%
   summarise(value=sum(Obs_value)) %>%
   group_by(geo, year, age) %>%
@@ -51,10 +53,10 @@ dfdeath %>%
   scale_x_continuous(limits = c(1, 52)) +
   facet_grid(age ~.)
 
-# Todesfälle 2020 pro Kalenderwoche und Kanton 
+# Todesfälle 2020 pro Alter, Kalenderwoche und Kanton 
 dfdeath %>%
   filter(year=='2020', geo != 'CH') %>%
-  filter(grepl('CH01',geo)) %>%
+  filter(grepl('CH07',geo)) %>%
   ggplot(aes(x=cw, y=value, color=kanton)) +
   geom_line() +
   scale_x_continuous(limits = c(1, 15)) +
@@ -71,7 +73,7 @@ dfdeath %>%
   mutate(highlight=year!=year_last) %>%
   filter(geo != 'CH') %>%
   filter(grepl('CH07',geo)) %>%
-  filter(age == '65+') %>%
+  #filter(age == '65+') %>%
   filter(cw %in% 1:20) %>%
   tidyr::pivot_longer(cols = starts_with('value'), names_to = 'key', values_to = 'value') %>%
   ggplot(aes(x=cw, y=value, group=year, color=highlight, size=highlight)) +
@@ -83,7 +85,7 @@ dfdeath %>%
   ylab(NULL) +
   xlab('Kalenderwoche') +
   scale_x_continuous() +
-  facet_wrap(. ~ key + kanton, nrow=2, scales = 'free', labeller = labeller(key = facetlab)) +
+  facet_wrap(. ~ key + age, nrow=2, scales = 'free', labeller = labeller(key = facetlab)) +
   theme(
     legend.position="none",
     plot.title = element_text(size=14)
@@ -103,22 +105,35 @@ bardat <- dfdeath %>%
             N4= sum(value[cw<=(cw_last-4)])) %>%
   ungroup() %>%
   mutate(highlight=year!=year_last)  %>%
-  mutate(x = as.integer(year), y = N)
-  
+  mutate(x = as.integer(year))
+
+bardat2 <- dfdeath %>% 
+  filter(cw <= cw_last) %>%
+  group_by(year, kanton, geo, age) %>%
+  summarise(N=sum(value), 
+            N12= sum(value[cw<=12]), 
+            N9= sum(value[cw<=9]), 
+            N6= sum(value[cw<=6]), 
+            N3= sum(value[cw<=3])) %>%
+  ungroup() %>%
+  mutate(highlight=year!=year_last)  %>%
+  mutate(x = as.integer(year))
+
 
 bartxt <- sprintf('Im Jahr 2020 erfasste Todesfälle %s\n sind leicht über Mittlerem Erwartungswert %s', 
                   format(last(bardat$N),big.mark = "'"), format(last(bardat$Expect),big.mark = "'"))
 bartxt <- 'Hallo Velo'
 
-bardat %>%
-  filter(grepl('CH013',geo)) %>%
-  filter(age == '65+') %>%
+bardat2 %>%
+  filter(grepl('CH011',geo)) %>%
+  #filter(age == '65+') %>%
   ggplot(aes(x=as.integer(year), y=N, fill=highlight)) +
-  geom_col(stat = "identity") +
-  #geom_segment( aes(x=x, xend=x, y=0, yend=y)) +
+  geom_bar(stat = "identity", width = 1) +
+  geom_segment( aes(x=x, xend=x, y=N3, yend=N6), color='white') +
+  geom_segment( aes(x=x, xend=x, y=N9, yend=N12), color='white') +
   geom_smooth(method = lm, se = T, fill='lightblue') +
-  geom_point(aes(y=N6), color='white', shape='-', size=7) +
-  geom_point(aes(y=N4), color='grey90', shape='-', size=7) +
+  #geom_point(aes(y=N6), color='white', shape='-', size=7) +
+  #geom_point(aes(y=N4), color='white', shape='-', size=7) +
   scale_fill_manual(values = c("#69b3a3", "lightgrey")) +
   #scale_color_manual(values = c("#19b3a3", "lightgrey")) +
   theme_minimal() +
@@ -130,7 +145,8 @@ bardat %>%
   theme(
     legend.position="none",
     plot.title = element_text(size=14)
-  )
+  ) +
+  facet_wrap(age ~ .)
 
 # ggsave('dc2020.png', width = 8, height = 6)
 
