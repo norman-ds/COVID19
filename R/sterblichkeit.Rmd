@@ -2,12 +2,18 @@
 title: "Die Zahl der Toten"
 author: "Norman Bieri, https://puntaminar.ch"
 date: "29. Februar 2020"
-output: html_document
+output: 
+  html_document:
+    css: style.css
+    includes:
+      after_body: footer.html
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+***
 
 Zur aktuellen COVID-19 Pandemie sind viele Methoden und Daten verfügbar, wenn auch mit einigen Unsicherheiten, sind dennoch Resultate berechenbar. Bevor eine Methode bestimmt wird ist der Prozess, wie neue Daten entstehen, und die Relationen zu bestehenden Datenbeständen zu hinterfragen. Eine releativ verlässliche Zahl ist die [laufende Erfassung der Todesfälle](https://www.bfs.admin.ch/bfs/de/home/statistiken/gesundheit/gesundheitszustand/sterblichkeit-todesursachen.html) in der Schweiz.
 
@@ -81,35 +87,61 @@ Viele Datenquellen wurden in den letzten Wochen immer wieder in den Medien erwä
 
 Um die Zahl der Toten einordnen zu können, benötigen wir eine Statistik, die auch in den vergangenen Jahren erhoben wurde. Ein saisonaler Vergleich mit vergangenen Jahren ist hilfreich. Das Bundesamt für Statistik führt eine [laufende Erfassung der Todesfälle](https://www.bfs.admin.ch/bfs/de/home/statistiken/gesundheit/gesundheitszustand/sterblichkeit-todesursachen.html) in der Schweiz durch. 
 
-![](../images/gd-e-14.03.04.03-wr-computed_thumbnail.png)
-
+</br>
+<center>
+![Todesfälle 2020](../images/gd-d-14.03.04.03-wr-computed_thumbnail.png)
+</center>
+</br>
 Erfasst werden alle Todesfälle beim zuständigen Zivilstandsamt von Schweizern mit Wohnsitz in der Schweiz. Neben dem Peak im April ist auch der Verlauf im Januar und Februar auffällig. Anfangs Jahr werden weniger Todesfälle als erwartet an das BFS gemeldet.
 
 
 # Die Zahl der Toten streut wie die Jahre zuvor
 
 Die gemeldeten Todesfälle im März und April 2020 liegen zwar weit über dem 95%-Konfidenzinterval, aber die Grippewelle hat auch in den vergangenen Jahren zu grossen Zahlen geführt. Vor vier Jahren, im Jahr 2016, wurde das letzte mal in den Monaten Januar und Februar so wenige Todesfälle wie im 2020 gemeldet. In den Jahren 2017 bis 2019 waren die gemeldeten Todesfälle im Winter höher als 2020.
+</br>
 
 
-```{r, results='asis', echo=F}
+```{r, results='asis', echo=F, cache=T}
 # create a dataframe with column year and images as file list
 pics <- data.frame(
-  images = list.files('../images', recursive = F, full.names = T, pattern="*.png")
+  images = list.files('../images', recursive = F, full.names = T, pattern="^g.-d.*png")
 )
-pics$year <- gsub("gd-e-14.03.04","_2020_", pics$images)
+pics$year <- gsub("gd-d-14.03.04","_2020_", pics$images)
 pics$year <- gsub("(^.*)([0-9]{4})(.*)","\\2", pics$year)
 pics$images <- sprintf('![](%s)', pics$images)
 
 # reorganize the figures in a 3x3 table
 plots <- pics$images[order(pics$year, decreasing = T)][1:9]
-plots <- as.data.frame(matrix(unlist(plots), ncol = 3, byrow = TRUE), stringsAsFactors = F)
+#plots <- as.data.frame(matrix(unlist(plots), ncol = 3, byrow = TRUE), stringsAsFactors = F)
 
-library(knitr)
-kable(plots, col.names = NULL, caption = "Ein Vergleich der publizierten Grafiken vom BFS")
+#library(knitr)
+#kable(plots, col.names = NULL, caption = "Ein Vergleich der #publizierten Grafiken vom BFS")
+
+#plots
 ```
 
+</br>
+<div class = "row">
+  <div class = "col-md-4">`r plots[1]`</div>
+  <div class = "col-md-4">`r plots[2]`</div>
+  <div class = "col-md-4">`r plots[3]`</div>
+</div>
+<div class = "row">
+  <div class = "col-md-4">`r plots[4]`</div>
+  <div class = "col-md-4">`r plots[5]`</div>
+  <div class = "col-md-4">`r plots[6]`</div>
+</div>
+<div class = "row">
+  <div class = "col-md-4">`r plots[7]`</div>
+  <div class = "col-md-4">`r plots[8]`</div>
+  <div class = "col-md-4">`r plots[9]`</div>
+</div>
+
+</br>
 
 Aufgrund des Bevölkerungswachstums in der Schweiz, sterben jedes Jahr mehr Menschen. Dies wiederspegelt sich im jährlichen Erwartungswert vom Bundesamt für Statistik (Mitte des grünen Bandes). 
+
+</br>
 
 ```{r results='asis', warning=F, echo=F, message=F}
 
@@ -140,8 +172,8 @@ datlatest <-dat20 %>%
 rm(dat19, dat20)
 ```
 
-
-```{r results='asis',warning=F, echo=F}
+</br>
+```{r results='asis',warning=F, echo=F, fig.align="center", fig.width=7, fig.height=5, fig.cap="Datenquelle: BFS, Grafik by Norman Bieri"}
 
 library(ggplot2)
 library(dplyr)
@@ -170,10 +202,14 @@ dat %>%
 
 ```
 
+</br>
 
-Die Summe aller erfassten Todesfälle im Jahr 2020 liegt im Bereich des Erwartungswerts. Das Bundesamt für Statistik hat zwischen dem 1.Januar und dem 21.April 2020 nicht mit weniger Todesfällen gerechnet.
 
-```{r results='asis',warning=F, echo=F}
+Die Summe aller erfassten Todesfälle im Jahr 2020 liegt im Bereich des Erwartungswerts. Das Bundesamt für Statistik hat zwischen dem 1.Januar und dem 28.April 2020 nicht mit weniger Todesfällen gerechnet.
+
+</br>
+
+```{r results='asis',warning=F, echo=F, fig.align="center", fig.width=7, fig.height=5, fig.cap="Datenquelle: BFS, Grafik by Norman Bieri"}
 #  Mittlere Erwartungswerte und gemeldete Totesfälle der Jahre 2010-2020 (Age 65+)
 # pro Kalenderwoche und kumuliert
 
@@ -207,9 +243,13 @@ dat %>%
 
 ```
 
-Jährlich erfasste Todesfälle bis zur Kalenderwoche 15 bleiben konstant seit 2017.
+</br>
 
-```{r results='asis',warning=F, echo=F}
+Jährlich erfasste Todesfälle bis zur Kalenderwoche 16 bleiben konstant seit 2017.
+
+</br>
+
+```{r results='asis',warning=F, echo=F, fig.align="center", fig.width=7, fig.height=5, fig.cap="Datenquelle: BFS, Grafik by Norman Bieri"}
 
 bardat <- dat %>% 
   filter(KW <= datlatest$KW) %>%
@@ -240,5 +280,3 @@ bardat %>%
 
 ```
 
-
-<p>Copyright &copy; 2020 [puntaminar gmbh](https://puntaminar.ch)</p>
